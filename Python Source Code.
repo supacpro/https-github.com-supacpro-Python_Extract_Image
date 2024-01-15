@@ -1,0 +1,49 @@
+import fitz
+import os
+from PIL import Image
+from tqdm import tqdm
+
+# Define path to PDF file
+file_path = '5TP_Sixmonth_Vol.9.pdf'
+
+# Define path for saved images
+images_path = 'images/'
+
+# Open PDF file
+pdf_file = fitz.open(file_path)
+
+# Define the range of pages you want to extract images from
+start_page = ('') 
+end_page = ('')
+
+# Create the folder to store images if it doesn't exist
+if not os.path.exists(images_path):
+    os.makedirs(images_path)
+
+# Create an empty list to store images information
+images_list = []
+
+# Extract all images information from each specified page
+for page_num in range(start_page - 1, min(end_page, len(pdf_file))):
+    page_content = pdf_file[page_num]
+    images_list.extend(page_content.get_images())
+
+# Raise error if no images found in the specified range of pages
+if len(images_list) == 0:
+    raise ValueError(f'No images found in pages {start_page} to {end_page} of {file_path}')
+
+# Save all the extracted images with progress bar
+for i, img in tqdm(enumerate(images_list, start=1), total=len(images_list), desc="Processing Images"):
+    # Extract the image object number
+    xref = img[0]
+    # Extract image
+    base_image = pdf_file.extract_image(xref)
+    # Store image bytes
+    image_bytes = base_image['image']
+    # Store image extension
+    image_ext = base_image['ext']
+    # Generate image file name
+    image_name = str(i) + '.' + image_ext
+    # Save image
+    with open(os.path.join(images_path, image_name), 'wb') as image_file:
+        image_file.write(image_bytes)
